@@ -1,0 +1,73 @@
+name: Build Windows
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25.1'
+          cache: false
+      - name: Enable MinGW compiler
+        shell: pwsh
+        run: |
+          $candidates = @('C:\mingw64\bin', 'C:\msys64\mingw64\bin')
+          $compiler = $candidates | Where-Object { Test-Path (Join-Path $_ 'gcc.exe') } | Select-Object -First 1
+          if (-not $compiler) { throw 'MinGW-w64 is missing from this runner' }
+          $compiler | Out-File -FilePath $env:GITHUB_PATH -Append
+          'CGO_ENABLED=1' | Out-File -FilePath $env:GITHUB_ENV -Append
+      - name: Test, build and package
+        shell: pwsh
+        run: ./scripts/package.ps1
+      - name: Upload Windows packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: GameMic-Windows
+          path: dist/
+          if-no-files-found: error
+
+  release:
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: GameMic-Windows
+          path: dist
+      - name: Publish a new version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          version=$(tr -d '\r\n' < VERSION)
+          tag="v$version"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "Release $tag already exists; increment VERSION to publish another release."
+            exit 0
+          fi
+          gh release create "$tag" \
+            --target "$GITHUB_SHA" \
+            --title "GameMic $tag" \
+            --notes-file RELEASE-NOTES.md \
+            "dist/GameMic-Setup-$version-windows-amd64.exe" \
+            "dist/GameMic-$version-windows-amd64-portable.zip" \
+            dist/SHA256SUMS.txt

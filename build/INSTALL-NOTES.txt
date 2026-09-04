@@ -1,0 +1,24 @@
+GameMic - microphone gain for Windows
+
+This installer includes the original VB-CABLE driver package from VB-Audio.
+If the driver installer opens, click INSTALL DRIVER and restart Windows after
+installation. If it shows REMOVE DRIVER, the driver is already installed:
+close that window instead of removing it.
+
+After restarting:
+1. Open GameMic and choose your physical microphone.
+2. Start with +20 dB and click the Start button.
+3. Select CABLE Output (VB-Audio Virtual Cable) as the microphone in your game.
+
+Keep your speakers/headphones as the Windows default playback device.
+The noise gate is optional and disabled by default.
+
+VB-CABLE is made by VB-Audio Software / Vincent Burel.
+Origin: https://vb-audio.com/Cable/
+VB-CABLE is donationware; all participations are welcome.
+Licensing and donations: https://vb-audio.com/Services/licensing.htm
+The VB-CABLE driver is NOT covered by GameMic's MIT license.
+
+Uninstalling GameMic leaves the shared VB-CABLE driver installed, since other
+applications may use it. Remove that driver separately using the official
+VB-CABLE installer if you no longer need it.
