@@ -73,8 +73,8 @@ func main() {
 	if loadErr!=nil{walk.MsgBox(a.mw,"设置未载入","无法读取设置，已使用默认值：\n"+loadErr.Error(),walk.MsgBoxIconWarning)}
 	if !smoke {a.createTray()}
 	a.mw.Closing().Attach(func(canceled *bool,reason walk.CloseReason){
-		if !a.quitting && a.tray!=nil && reason==walk.CloseReasonUser{*canceled=true;a.mw.Hide();return}
 		a.save()
+		if !a.quitting && a.tray!=nil && reason==walk.CloseReasonUser{*canceled=true;a.mw.Hide();return}
 	})
 	quit:=make(chan struct{})
 	defer close(quit)
@@ -92,7 +92,7 @@ func main() {
 func (a *application) createUI() error {
 	return (MainWindow{
 		AssignTo:&a.mw,Title:"GameMic · 麦克风放大 "+version,
-		MinSize:Size{540,580},Size:Size{580,650},
+		MinSize:Size{Width:540,Height:580},Size:Size{Width:580,Height:650},
 		Font:Font{Family:"Microsoft YaHei UI",PointSize:10},
 		Layout:VBox{Margins:Margins{Left:20,Top:16,Right:20,Bottom:16},Spacing:9},
 		Children:[]Widget{
@@ -114,7 +114,7 @@ func (a *application) createUI() error {
 			ProgressBar{AssignTo:&a.inputMeter,MinValue:0,MaxValue:60},
 			ProgressBar{AssignTo:&a.outputMeter,MinValue:0,MaxValue:60},
 			Label{Text:"游戏的麦克风请选择：CABLE Output (VB-Audio Virtual Cable)",Font:Font{Family:"Microsoft YaHei UI",PointSize:10,Bold:true}},
-			Label{AssignTo:&a.status,Text:"正在检查音频设备…",MinSize:Size{0,42}},
+			Label{AssignTo:&a.status,Text:"正在检查音频设备…",MinSize:Size{Width:0,Height:42}},
 			Composite{Layout:HBox{},Children:[]Widget{
 				PushButton{AssignTo:&a.start,Text:"开始放大",OnClicked:a.toggle},
 				PushButton{AssignTo:&a.driver,Text:"安装虚拟麦克风",OnClicked:a.installDriver},

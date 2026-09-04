@@ -7,6 +7,19 @@ New-Item -ItemType Directory -Force dist, dist/licenses, build/vendor | Out-Null
 # Build dependencies are pinned in go.mod; this records the complete checksum set.
 go mod tidy
 if ($LASTEXITCODE -ne 0) { throw 'go mod tidy failed' }
+gofmt -w cmd internal
+if ($LASTEXITCODE -ne 0) { throw 'gofmt failed' }
+# Export the exact normalized sources/checksums for build provenance.
+$sourceMap = @{}
+Get-ChildItem cmd,internal -Filter *.go -Recurse | ForEach-Object {
+  $relative = [IO.Path]::GetRelativePath($PWD.Path, $_.FullName).Replace('\','/')
+  $sourceMap[$relative] = [IO.File]::ReadAllText($_.FullName)
+}
+$sourceMap['go.mod'] = [IO.File]::ReadAllText((Join-Path $PWD 'go.mod'))
+$sourceMap['go.sum'] = [IO.File]::ReadAllText((Join-Path $PWD 'go.sum'))
+foreach ($path in $sourceMap.Keys) {
+  Write-Output ('GAMEMIC_SOURCE_B64:' + $path + ':' + [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($sourceMap[$path])))
+}
 go mod verify
 if ($LASTEXITCODE -ne 0) { throw 'Module verification failed' }
 go test ./internal/...
@@ -48,6 +61,8 @@ Write-Output "VB-CABLE signer: $($sig.SignerCertificate.Subject)"
 
 Copy-Item LICENSE dist/licenses/GameMic-LICENSE.txt
 Copy-Item THIRD-PARTY-NOTICES.md dist/licenses/
+$goRoot = go env GOROOT
+Copy-Item (Join-Path $goRoot 'LICENSE') dist/licenses/Go-LICENSE.txt
 $modules = go list -m -json all | Out-String
 $modules | Set-Content dist/licenses/go-modules.json
 # Collect licenses from module directories for redistribution.
